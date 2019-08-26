@@ -8,9 +8,14 @@
 
 config_version=4
 
-_global_script_classes=[  ]
+_global_script_classes=[ {
+"base": "AStar",
+"class": "AStarCustom",
+"language": "GDScript",
+"path": "res://astar_custom.gd"
+} ]
 _global_script_class_icons={
-
+"AStarCustom": ""
 }
 
 [application]

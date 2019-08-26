@@ -1,9 +1,9 @@
 extends TileMap
 
 # You can only create an AStar node from code, not from the Scene tab
-onready var astar_node = AStar.new()
+var astar_node
 # The Tilemap node doesn't have clear bounds so we're defining the map's limits here
-export(Vector2) var map_size = Vector2(512, 512)
+export(Vector2) var map_size = Vector2(24, 16)
 
 # The path start and end variables use setter methods
 # You can find them at the bottom of the script
@@ -22,11 +22,33 @@ onready var _half_cell_size = cell_size / 2
 
 func _ready():
 	print("Start building AStar: %s" % OS.get_ticks_msec())
+	astar_node = AStar.new()
 	var walkable_cells_list = astar_add_walkable_cells(obstacles)
 	astar_connect_walkable_cells(walkable_cells_list)
 	print("Done building AStar: %s" % OS.get_ticks_msec())
+	
+	print("Start building AStarCustom with incremental index: %s" % OS.get_ticks_msec())
+	astar_node = AStarCustom.new()
+	astar_node.build(self, false, 7) # incremental index, don't work for 8 or more!
+	print("Done building AStarCustom with incremental index: %s" % OS.get_ticks_msec())
 
-
+	print("Start building AStarCustom with preallocation: %s" % OS.get_ticks_msec())
+	astar_node = AStarCustom.new()
+	astar_node.build(self, true, 777) # any incremental index works when preallocation enabled
+	print("Done building AStarCustom with preallocation: %s" % OS.get_ticks_msec())
+	
+	print("Start building AStarCustom with default index: %s" % OS.get_ticks_msec())
+	astar_node = AStarCustom.new()
+	astar_node.build(self, true, -1) # default index works as well when preallocation enabled
+	print("Done building AStarCustom with default index: %s" % OS.get_ticks_msec())
+	
+	# TODO: UNCOMMENT ME TO REPRODUCE ISSUE
+#	print("Start hanging of AStarCustom without any fixes: %s" % OS.get_ticks_msec())
+#	astar_node = AStarCustom.new()
+#	astar_node.build(self, false, -1)
+#	print("Done building AStarCustom without any fixes: %s" % OS.get_ticks_msec())
+	
+	
 # Click and Shift force the start and end position of the path to update
 # and the node to redraw everything
 #func _input(event):
@@ -45,8 +67,6 @@ func astar_add_walkable_cells(obstacles = []):
 		for x in range(map_size.x):
 			var point = Vector2(x, y)
 			if point in obstacles:
-				continue
-			if randi() % 5 == 0:
 				continue
 			points_array.append(point)
 			# The AStar class references points with indices
@@ -111,6 +131,8 @@ func is_outside_map_bounds(point):
 
 
 func calculate_point_index(point):
+	if astar_node.has_method("calculate_point_index"):
+		return astar_node.calculate_point_index(point)
 	return point.x + map_size.x * point.y
 
 
